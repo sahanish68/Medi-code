@@ -100,3 +100,4 @@ Components should not directly perform database queries.
 The app must never guess unclear handwriting or invent dosage, duration, diagnosis, alternatives or interactions.
 
 MediDecode is informational assistance and does not replace advice from a qualified doctor or pharmacist.
+ok
