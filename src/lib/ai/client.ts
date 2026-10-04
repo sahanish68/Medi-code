@@ -4,8 +4,8 @@ import { PRESCRIPTION_SYSTEM_PROMPT } from "./prompts";
 /**
  * AI / Vision Client for prescription processing.
  * Dual-engine architecture:
- * 1. Gemini AI Vision (Primary High Accuracy engine for handwritten & printed prescriptions)
- * 2. Local Clinical Rules & Regex Engine (Secondary offline / fallback engine)
+ * 1. Gemini AI Vision (Primary engine for handwritten & printed prescriptions)
+ * 2. Clinical Rules & Regex NLP Engine (Secondary offline / fallback engine)
  */
 export async function extractPrescriptionWithAI(params: {
   imageBase64?: string;
@@ -14,14 +14,19 @@ export async function extractPrescriptionWithAI(params: {
   fileName?: string;
   fileFingerprint?: string;
 }): Promise<PrescriptionExtraction> {
-  const apiKey =
+  const rawApiKey =
     process.env.AI_API_KEY ||
     process.env.GEMINI_API_KEY ||
     process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    "";
 
-  // 1. External AI / Vision API call if API key configured
-  if (apiKey && params.imageBase64) {
+  // Sanitize API key (trim whitespace, quotes, accidental leading spaces)
+  const apiKey = rawApiKey.trim().replace(/^["']|["']$/g, "");
+  const isValidGeminiKeyFormat = apiKey.startsWith("AIza");
+
+  // 1. External AI / Vision API call if API key is configured and valid
+  if (apiKey && isValidGeminiKeyFormat && params.imageBase64) {
     const modelsToTry = [
       "gemini-1.5-flash",
       "gemini-2.0-flash",
@@ -68,15 +73,19 @@ export async function extractPrescriptionWithAI(params: {
             }
           }
         } else {
-          console.warn(`Gemini model ${model} returned error status:`, response.status, await response.text());
+          console.warn(`[MediDecode AI] Gemini model ${model} returned error status:`, response.status);
         }
       } catch (err) {
-        console.warn(`Gemini API call with ${model} failed:`, err);
+        console.warn(`[MediDecode AI] Gemini API call with ${model} failed:`, err);
       }
     }
+  } else if (apiKey && !isValidGeminiKeyFormat) {
+    console.warn(
+      "[MediDecode AI] Provided AI_API_KEY does not start with 'AIza'. Note: Google Gemini API keys start with 'AIzaSy'. Switching to Clinical Rules OCR Engine."
+    );
   }
 
-  // 2. Perform server OCR on image if base64 is present and rawText is not provided
+  // 2. Perform OCR on image if base64 is present and rawText is not provided
   let ocrText = params.rawText || "";
 
   if (!ocrText && params.imageBase64) {
@@ -88,7 +97,7 @@ export async function extractPrescriptionWithAI(params: {
         ocrText = ret?.data?.text || "";
       }
     } catch (err) {
-      console.warn("Server Tesseract OCR recognize fallback skipped:", err);
+      console.warn("[MediDecode OCR] Tesseract OCR fallback skipped:", err);
     }
   }
 
@@ -154,9 +163,9 @@ export function parsePrescriptionLocally(
   // 3. Diagnosis Extraction
   let diagnosis = isNonMedicalDocument ? "Non-Prescription Document Detected" : "Prescription Evaluation";
 
-  // 4. Extract Medicines from Text
+  // 4. Extract Medicines from Text with Deduplication
   const matchedMedicines: any[] = [];
-  const addedNames = new Set<string>();
+  const addedSignatures = new Set<string>();
 
   // A. Check against Known Drug Dictionary
   for (const drug of DRUGS_DICTIONARY) {
@@ -173,19 +182,24 @@ export function parsePrescriptionLocally(
       else if (/1-1-1|tds|tid|three/i.test(textLower)) frequency = "Three times daily";
       else if (/1-0-0|0-0-1|od|once/i.test(textLower)) frequency = "Once daily";
 
-      matchedMedicines.push({
-        name: drug.name,
-        strength,
-        dosage: "1 tablet",
-        frequency,
-        duration: "5 days",
-        timing: drug.timing,
-        route: "Oral",
-        instructions: `Take ${drug.timing.toLowerCase()}. ${drug.uses}.`,
-        confidenceScore: 0.95,
-        needsVerification: false
-      });
-      addedNames.add(drug.name.toLowerCase());
+      const sigKey = drug.name.toLowerCase();
+      if (!addedSignatures.has(sigKey)) {
+        matchedMedicines.push({
+          name: drug.name,
+          strength,
+          dosage: "1 tablet",
+          frequency,
+          duration: "5 days",
+          timing: drug.timing,
+          route: "Oral",
+          instructions: `Take ${drug.timing.toLowerCase()}. ${drug.uses}.`,
+          confidenceScore: 0.95,
+          needsVerification: false
+        });
+        addedSignatures.add(sigKey);
+        // Also register keywords so raw lines don't duplicate known drugs
+        drug.keywords.forEach(k => addedSignatures.add(k));
+      }
     }
   }
 
@@ -202,7 +216,8 @@ export function parsePrescriptionLocally(
     if (isNumberedLine || (hasDosageUnit && (hasFrequency || line.length < 60))) {
       let cleanName = line
         .replace(/^(?:\d+[\.\)]|\-|\*|rx:?|tab\.?|cap\.?|syr\.?|inj\.?|t\.|c\.)\s*/i, "")
-        .replace(/\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|once|twice|daily|after food|before food|for \d+ days)\b/gi, "")
+        .replace(/\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|once|twice|daily|after food|before food|for \d+ days|\d+ days)\b/gi, "")
+        .replace(/[-–—:]\s*$/, "")
         .trim();
 
       const strengthMatch = line.match(/\b(\d+\s*(?:mg|mcg|gm|g|ml))\b/i);
@@ -221,7 +236,10 @@ export function parsePrescriptionLocally(
       const durationMatch = line.match(/\b(?:for\s+)?(\d+\s*(?:days|weeks|months|day|week))\b/i);
       const duration = durationMatch ? durationMatch[1] : "5 days";
 
-      if (cleanName.length >= 2 && !addedNames.has(cleanName.toLowerCase())) {
+      const cleanLower = cleanName.toLowerCase();
+      const isAlreadyAdded = Array.from(addedSignatures).some(sig => cleanLower.includes(sig) || sig.includes(cleanLower));
+
+      if (cleanName.length >= 2 && !isAlreadyAdded) {
         matchedMedicines.push({
           name: cleanName,
           strength,
@@ -234,7 +252,7 @@ export function parsePrescriptionLocally(
           confidenceScore: 0.85,
           needsVerification: true
         });
-        addedNames.add(cleanName.toLowerCase());
+        addedSignatures.add(cleanLower);
       }
     }
   }
@@ -243,8 +261,9 @@ export function parsePrescriptionLocally(
   if (matchedMedicines.length === 0 && !isNonMedicalDocument) {
     const medWords = lines.filter(l => /\b(tablet|capsule|syrup|injection|mg|ml|dose|rx|take)\b/i.test(l));
     for (const mw of medWords) {
-      const clean = mw.replace(/^(rx:?|tab\.?|cap\.?|syr\.?)\s*/i, "").trim();
-      if (clean.length > 3 && !addedNames.has(clean.toLowerCase())) {
+      const clean = mw.replace(/^(rx:?|tab\.?|cap\.?|syr\.?)\s*/i, "").replace(/[-–—:]\s*$/, "").trim();
+      const cleanLower = clean.toLowerCase();
+      if (clean.length > 3 && !addedSignatures.has(cleanLower)) {
         matchedMedicines.push({
           name: clean,
           strength: "Needs verification",
@@ -257,7 +276,7 @@ export function parsePrescriptionLocally(
           confidenceScore: 0.7,
           needsVerification: true
         });
-        addedNames.add(clean.toLowerCase());
+        addedSignatures.add(cleanLower);
       }
     }
   }
