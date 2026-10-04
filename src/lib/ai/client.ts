@@ -3,7 +3,9 @@ import { PRESCRIPTION_SYSTEM_PROMPT } from "./prompts";
 
 /**
  * AI / Vision Client for prescription processing.
- * Handles both Gemini Vision AI and local Tesseract OCR fallback.
+ * Dual-engine architecture:
+ * 1. Gemini AI Vision (Primary High Accuracy engine for handwritten & printed prescriptions)
+ * 2. Local Clinical Rules & Regex Engine (Secondary offline / fallback engine)
  */
 export async function extractPrescriptionWithAI(params: {
   imageBase64?: string;
@@ -20,53 +22,61 @@ export async function extractPrescriptionWithAI(params: {
 
   // 1. External AI / Vision API call if API key configured
   if (apiKey && params.imageBase64) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: PRESCRIPTION_SYSTEM_PROMPT },
-                  {
-                    inlineData: {
-                      mimeType: params.mimeType || "image/jpeg",
-                      data: params.imageBase64
-                    }
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1
-            }
-          })
-        }
-      );
+    const modelsToTry = [
+      "gemini-1.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-pro"
+    ];
 
-      if (response.ok) {
-        const result = await response.json();
-        const candidateText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (candidateText) {
-          const parsedJson = JSON.parse(candidateText);
-          const validated = prescriptionExtractionSchema.safeParse(parsedJson);
-          if (validated.success) {
-            return validated.data;
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: PRESCRIPTION_SYSTEM_PROMPT },
+                    {
+                      inlineData: {
+                        mimeType: params.mimeType || "image/jpeg",
+                        data: params.imageBase64
+                      }
+                    }
+                  ]
+                }
+              ],
+              generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.1
+              }
+            })
           }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          const candidateText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (candidateText) {
+            const parsedJson = JSON.parse(candidateText);
+            const validated = prescriptionExtractionSchema.safeParse(parsedJson);
+            if (validated.success) {
+              return validated.data;
+            }
+          }
+        } else {
+          console.warn(`Gemini model ${model} returned error status:`, response.status, await response.text());
         }
-      } else {
-        console.warn("Gemini API returned error status:", response.status, await response.text());
+      } catch (err) {
+        console.warn(`Gemini API call with ${model} failed:`, err);
       }
-    } catch (err) {
-      console.warn("External AI API call failed, falling back to Tesseract OCR & local parser:", err);
     }
   }
 
-  // 2. Perform OCR on image if base64 is present and rawText is not provided
+  // 2. Perform server OCR on image if base64 is present and rawText is not provided
   let ocrText = params.rawText || "";
 
   if (!ocrText && params.imageBase64) {
@@ -78,7 +88,7 @@ export async function extractPrescriptionWithAI(params: {
         ocrText = ret?.data?.text || "";
       }
     } catch (err) {
-      console.warn("Tesseract OCR recognize fallback failed:", err);
+      console.warn("Server Tesseract OCR recognize fallback skipped:", err);
     }
   }
 
@@ -179,31 +189,25 @@ export function parsePrescriptionLocally(
     }
   }
 
-  // B. Generic Line-by-Line Prescription Extractor (for Rx lines,numbered lines, tab/cap/syr, dosage numbers)
+  // B. Generic Line-by-Line Prescription Extractor
   for (const line of lines) {
-    // Skip doctor line, date line, or common non-medicine lines
     if (/^(dr\.?|doctor|date:|diagnosis:|patient:|rx:|age:|sex:|gender:)/i.test(line)) continue;
 
     const lineLower = line.toLowerCase();
 
-    // Check if line looks like a medicine line:
-    // Starts with number (1., 2.), bullet, Rx, Tab, Cap, Syr, Inj, OR contains dosage units (mg, ml, mcg) OR frequency (1-0-1, BD, OD, TDS)
     const isNumberedLine = /^(?:\d+[\.\)]|\-|\*|rx|tab|cap|syr|inj|t\.|c\.)/i.test(line);
     const hasDosageUnit = /\b(\d+\s*(?:mg|mcg|gm|g|ml|tablets|capsules|tabs|caps|iu))\b/i.test(line);
     const hasFrequency = /\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|twice|once|daily)\b/i.test(line);
 
-    if (isNumberedLine || (hasDosageUnit && (hasFrequency || line.length < 50))) {
-      // Clean medicine name
+    if (isNumberedLine || (hasDosageUnit && (hasFrequency || line.length < 60))) {
       let cleanName = line
         .replace(/^(?:\d+[\.\)]|\-|\*|rx:?|tab\.?|cap\.?|syr\.?|inj\.?|t\.|c\.)\s*/i, "")
         .replace(/\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|once|twice|daily|after food|before food|for \d+ days)\b/gi, "")
         .trim();
 
-      // Extract strength if available in line
       const strengthMatch = line.match(/\b(\d+\s*(?:mg|mcg|gm|g|ml))\b/i);
       const strength = strengthMatch ? strengthMatch[1].toUpperCase() : "As prescribed";
 
-      // Extract frequency
       let frequency = "Twice daily";
       if (/1-0-1|bd|twice/i.test(lineLower)) frequency = "Twice daily (Morning & Night)";
       else if (/1-1-1|tds|tid|three/i.test(lineLower)) frequency = "Three times daily";
@@ -211,11 +215,9 @@ export function parsePrescriptionLocally(
       else if (/0-0-1|hs|bedtime/i.test(lineLower)) frequency = "Once daily at bedtime";
       else if (/sos|as needed/i.test(lineLower)) frequency = "As needed (SOS)";
 
-      // Extract timing
       let timing = "After food";
       if (/before|ac|empty stomach/i.test(lineLower)) timing = "Before food";
 
-      // Extract duration
       const durationMatch = line.match(/\b(?:for\s+)?(\d+\s*(?:days|weeks|months|day|week))\b/i);
       const duration = durationMatch ? durationMatch[1] : "5 days";
 
@@ -237,13 +239,12 @@ export function parsePrescriptionLocally(
     }
   }
 
-  // C. Fallback for prescriptions without explicit line numbers:
-  // If no medicines found yet, but document mentions prescription/medicine keywords, extract capitalized drug terms
+  // C. Fallback for prescriptions without explicit line numbers
   if (matchedMedicines.length === 0 && !isNonMedicalDocument) {
     const medWords = lines.filter(l => /\b(tablet|capsule|syrup|injection|mg|ml|dose|rx|take)\b/i.test(l));
     for (const mw of medWords) {
       const clean = mw.replace(/^(rx:?|tab\.?|cap\.?|syr\.?)\s*/i, "").trim();
-      if (clean.length > 3) {
+      if (clean.length > 3 && !addedNames.has(clean.toLowerCase())) {
         matchedMedicines.push({
           name: clean,
           strength: "Needs verification",
@@ -256,6 +257,7 @@ export function parsePrescriptionLocally(
           confidenceScore: 0.7,
           needsVerification: true
         });
+        addedNames.add(clean.toLowerCase());
       }
     }
   }

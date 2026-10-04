@@ -5,6 +5,7 @@ export async function processPrescriptionOCR(params: {
   imageBase64?: string;
   mimeType?: string;
   fileName: string;
+  rawText?: string;
   fileBuffer?: Buffer;
 }): Promise<{
   extractedData: PrescriptionExtraction;
@@ -19,7 +20,8 @@ export async function processPrescriptionOCR(params: {
   const extractedData = await extractPrescriptionWithAI({
     imageBase64: base64,
     mimeType: params.mimeType,
-    fileName: params.fileName
+    fileName: params.fileName,
+    rawText: params.rawText
   });
 
   const rawOcrText = [

@@ -62,9 +62,10 @@ export const usePrescriptionStore = create<PrescriptionStore>()(
           // 2. Reading
           set({ processingStep: "reading" });
 
-          // 3. Image Compression & Pixel Fingerprinting in Browser Canvas
+          // 3. Image Compression & Browser OCR Scan
           set({ processingStep: "identifying" });
           let base64: string | undefined;
+          let rawText: string | undefined;
           let fingerprint = `${file.name}-${file.size}-${file.lastModified}`;
 
           if (file.type.startsWith("image/")) {
@@ -80,7 +81,7 @@ export const usePrescriptionStore = create<PrescriptionStore>()(
             await new Promise((res) => { img.onload = res; });
 
             const canvas = document.createElement("canvas");
-            const maxDim = 1000;
+            const maxDim = 1200;
             let width = img.width;
             let height = img.height;
             if (width > maxDim || height > maxDim) {
@@ -98,13 +99,25 @@ export const usePrescriptionStore = create<PrescriptionStore>()(
             const ctx = canvas.getContext("2d");
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
-              // Sample pixel values for unique visual hash
               const sampleData = ctx.getImageData(0, 0, Math.min(10, width), Math.min(10, height)).data;
               fingerprint += "-" + Array.from(sampleData.slice(0, 32)).join("");
-              const compressedUrl = canvas.toDataURL("image/jpeg", 0.75);
+              const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
               base64 = compressedUrl.split(",")[1];
             } else {
               base64 = dataUrl.split(",")[1];
+            }
+
+            // Client-side Browser Tesseract OCR scan for maximum reliability across serverless/Vercel
+            try {
+              const tesseract = await import("tesseract.js");
+              if (tesseract && typeof tesseract.recognize === "function") {
+                const ret = await tesseract.recognize(dataUrl, "eng");
+                if (ret?.data?.text) {
+                  rawText = ret.data.text;
+                }
+              }
+            } catch (ocrErr) {
+              console.warn("Client browser Tesseract scan skipped:", ocrErr);
             }
           }
 
@@ -115,7 +128,8 @@ export const usePrescriptionStore = create<PrescriptionStore>()(
             filePath: uploadRes.filePath,
             fileName: file.name,
             imageBase64: base64,
-            mimeType: file.type
+            mimeType: file.type,
+            rawText
           });
 
           if (!processRes.success || !processRes.prescription) {

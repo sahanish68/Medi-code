@@ -11,6 +11,7 @@ export async function processPrescriptionAction(params: {
   fileName: string;
   imageBase64?: string;
   mimeType?: string;
+  rawText?: string;
 }): Promise<ProcessActionResult> {
   try {
     const supabase = await createClient();
@@ -32,6 +33,7 @@ export async function processPrescriptionAction(params: {
       imageBase64: params.imageBase64,
       mimeType: params.mimeType,
       fileName: params.fileName,
+      rawText: params.rawText,
       fileBuffer
     });
 
