@@ -43,7 +43,6 @@ export function formatPrescriptionFromExtraction(
     };
   });
 
-  // Simple language summary
   const totalMeds = medicines.length;
   const afterFoodCount = medicines.filter((m) =>
     m.timing.toLowerCase().includes("after")
@@ -52,16 +51,21 @@ export function formatPrescriptionFromExtraction(
     m.timing.toLowerCase().includes("before")
   ).length;
 
-  let summary = `You have been prescribed ${totalMeds} medicine${totalMeds === 1 ? "" : "s"}.`;
-  if (afterFoodCount > 0 && beforeFoodCount > 0) {
-    summary += ` ${afterFoodCount} to be taken after food and ${beforeFoodCount} before food.`;
-  } else if (afterFoodCount > 0) {
-    summary += ` To be taken after meals.`;
-  } else if (beforeFoodCount > 0) {
-    summary += ` To be taken before meals on an empty stomach.`;
+  let summary = "";
+  if (totalMeds === 0) {
+    summary = "No valid medicines detected in this document. Please ensure you upload a clear medical prescription.";
+  } else {
+    summary = `You have been prescribed ${totalMeds} medicine${totalMeds === 1 ? "" : "s"}.`;
+    if (afterFoodCount > 0 && beforeFoodCount > 0) {
+      summary += ` ${afterFoodCount} to be taken after food and ${beforeFoodCount} before food.`;
+    } else if (afterFoodCount > 0) {
+      summary += ` To be taken after meals.`;
+    } else if (beforeFoodCount > 0) {
+      summary += ` To be taken before meals on an empty stomach.`;
+    }
   }
 
-  const hasUnclear = medicines.some((m) => m.needsVerification);
+  const hasUnclear = totalMeds === 0 || medicines.some((m) => m.needsVerification);
   const status = hasUnclear ? "needs_verification" : "completed";
 
   return {
@@ -69,13 +73,15 @@ export function formatPrescriptionFromExtraction(
     userId,
     fileName,
     status,
-    doctorName: extraction.doctorName || "Treating Physician",
-    prescriptionDate: extraction.prescriptionDate || new Date().toISOString().split("T")[0],
-    diagnosis: extraction.diagnosis || "Clinical assessment recorded",
+    doctorName: extraction.doctorName || (totalMeds > 0 ? "Treating Physician" : "Not Detected"),
+    prescriptionDate: extraction.prescriptionDate || (totalMeds > 0 ? new Date().toISOString().split("T")[0] : new Date().toISOString().split("T")[0]),
+    diagnosis: extraction.diagnosis || (totalMeds > 0 ? "Clinical assessment recorded" : "Non-Prescription / Unclear Document"),
     summary,
     medicines,
     additionalInstructions:
       extraction.additionalInstructions ||
-      "Complete the prescribed course. Contact your healthcare provider if symptoms do not improve."
+      (totalMeds > 0
+        ? "Complete the prescribed course. Contact your healthcare provider if symptoms do not improve."
+        : "Please upload a valid medical prescription image.")
   };
 }
