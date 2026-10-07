@@ -15,7 +15,7 @@ export function ReminderTimePicker({
 }: ReminderTimePickerProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
         Reminder Time
       </label>
 
@@ -26,7 +26,7 @@ export function ReminderTimePicker({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="e.g. 08:00 AM"
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-semibold text-slate-800 focus:border-teal-500 focus:outline-none"
+          className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm font-semibold text-slate-900 dark:text-white focus:border-cyan-400 focus:outline-none"
         />
       </div>
 
@@ -36,10 +36,10 @@ export function ReminderTimePicker({
             key={t}
             type="button"
             onClick={() => onChange(t)}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               value === t
-                ? "bg-teal-600 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "bg-cyan-600 text-white"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
             {t}

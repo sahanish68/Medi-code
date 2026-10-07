@@ -41,7 +41,6 @@ export function HealthcarePage() {
   }
 
   useEffect(() => {
-    // Initial fetch of directory facilities
     performSearch("", 28.6139, 77.2090);
   }, []);
 
@@ -51,10 +50,10 @@ export function HealthcarePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <PageTitle
         title="Nearby Healthcare & Pharmacies"
-        description="Find pharmacies (including Govt Jan Aushadhi Kendras), hospitals, clinics, and medical centers in any city across India."
+        description="Locate Jan Aushadhi Kendras, 24/7 pharmacies, hospitals, and emergency clinics in any city."
         icon={Hospital}
       />
 
@@ -62,7 +61,7 @@ export function HealthcarePage() {
       <LocationPermission onLocationDetected={handleLocationDetected} />
 
       {/* Search Input Box */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 dark:border-cyan-500/20 bg-white dark:bg-slate-950/80 p-6 backdrop-blur-2xl shadow-sm">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -71,16 +70,16 @@ export function HealthcarePage() {
           className="flex flex-col gap-3 sm:flex-row"
         >
           <div className="relative flex-1">
-            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-600 dark:text-cyan-400" size={18} />
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Enter any Indian city, area name, or PIN code (e.g. Mumbai, Bangalore, Jaipur, 400001)..."
-              className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm font-medium focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600"
+              className="w-full rounded-xl border border-slate-300 dark:border-cyan-500/30 bg-slate-50 dark:bg-slate-900/80 py-3 pl-10 pr-4 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none backdrop-blur-md"
             />
           </div>
-          <Button type="submit" disabled={loading} className="bg-teal-700 hover:bg-teal-800 text-white">
+          <Button type="submit" disabled={loading} variant="glow">
             <Search size={17} /> {loading ? "Searching..." : "Search Facilities"}
           </Button>
         </form>

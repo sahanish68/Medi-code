@@ -24,42 +24,42 @@ export function HealthcareList({ facilities, selectedId, onSelectFacility }: Hea
   return (
     <div className="space-y-4">
       {/* Filter Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
           <Filter size={15} /> Filter Facilities:
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Facility Type Filter */}
-          <div className="flex items-center rounded-xl bg-slate-100 p-1 text-xs">
+          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs">
             <button
               onClick={() => setFilterType("all")}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterType === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterType === "all" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               All
             </button>
             <button
               onClick={() => setFilterType("pharmacy")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterType === "pharmacy" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterType === "pharmacy" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Pill size={12} /> Pharmacy
             </button>
             <button
               onClick={() => setFilterType("hospital")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterType === "hospital" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterType === "hospital" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Hospital size={12} /> Hospital
             </button>
             <button
               onClick={() => setFilterType("clinic")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterType === "clinic" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterType === "clinic" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Building2 size={12} /> Clinic
@@ -67,29 +67,29 @@ export function HealthcareList({ facilities, selectedId, onSelectFacility }: Hea
           </div>
 
           {/* Ownership Filter */}
-          <div className="flex items-center rounded-xl bg-slate-100 p-1 text-xs">
+          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs">
             <button
               onClick={() => setFilterOwnership("all")}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterOwnership === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterOwnership === "all" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               All Owners
             </button>
             <button
               onClick={() => setFilterOwnership("government")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-bold transition ${
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-bold transition cursor-pointer ${
                 filterOwnership === "government"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-emerald-700 hover:text-emerald-900"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300"
               }`}
             >
               <ShieldCheck size={12} /> Govt
             </button>
             <button
               onClick={() => setFilterOwnership("private")}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
-                filterOwnership === "private" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              className={`rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer ${
+                filterOwnership === "private" ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Private
@@ -100,9 +100,9 @@ export function HealthcareList({ facilities, selectedId, onSelectFacility }: Hea
 
       {/* Facilities List */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-slate-500 dark:text-slate-400">
           <p className="font-semibold">No healthcare facilities match your criteria.</p>
-          <p className="mt-1 text-xs text-slate-400">Try adjusting your filters or search location.</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Try adjusting your filters or search location.</p>
         </div>
       ) : (
         <div className="space-y-3">

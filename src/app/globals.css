@@ -1,16 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
+
+/* Authentic Medical Light Theme (Default) */
+html:not(.dark) body {
+  background-color: #f4f8fb;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(207, 250, 254, 0.6) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(241, 245, 249, 0.9) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #0f172a;
+}
+
+/* Dark Theme */
+html.dark body {
+  background-color: #060913;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(12, 74, 110, 0.25) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(14, 116, 144, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(15, 23, 42, 0.8) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #f1f5f9;
+}
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button, input, select, textarea { font: inherit; }
@@ -18,6 +46,56 @@ button, input, select, textarea { font: inherit; }
 button:disabled { cursor: not-allowed; }
 
 ::selection {
-  background: #ccfbf1;
-  color: #134e4a;
+  background: rgba(6, 182, 212, 0.3);
+  color: #0284c7;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #070c1b;
+}
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #0ea5e9;
+  border-radius: 4px;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #0f172a 0%, #0369a1 50%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .text-gradient-cyan {
+  background: linear-gradient(135deg, #ffffff 0%, #7dd3fc 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-teal {
+  background: linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #16a34a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .text-gradient-teal {
+  background: linear-gradient(135deg, #e0f2fe 0%, #38bdf8 50%, #14b8a6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Accessibility for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

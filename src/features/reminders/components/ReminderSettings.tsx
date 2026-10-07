@@ -26,22 +26,22 @@ export function ReminderSettings() {
   };
 
   return (
-    <Card className="border-teal-100 bg-teal-50/40">
+    <Card className="border-cyan-500/20 bg-cyan-500/10 dark:bg-slate-900/60">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-600 text-white shadow-xs">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-600 text-white shadow-xs">
             <Bell size={20} />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-900">Browser Notification Alerts</h4>
-            <p className="text-xs text-slate-600 mt-0.5">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Browser Notification Alerts</h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
               Receive on-screen alerts when it is time to take your morning, afternoon, or evening doses.
             </p>
           </div>
         </div>
 
         {hasPermission ? (
-          <div className="flex items-center gap-1.5 rounded-xl bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-800 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 shrink-0">
             <Check size={14} /> Enabled
           </div>
         ) : (
