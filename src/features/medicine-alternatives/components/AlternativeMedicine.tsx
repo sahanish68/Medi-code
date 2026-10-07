@@ -15,12 +15,12 @@ export function AlternativeMedicine({ medicine }: { medicine: Medicine }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="grid h-7 w-7 place-items-center rounded-lg bg-teal-50 text-teal-700">
+        <div className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300">
           <Pill size={16} />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-slate-900">Possible Generic Equivalents</h4>
-          <p className="text-[11px] text-slate-500">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Possible Generic Equivalents</h4>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Same active salt composition and strength (e.g. PMBJP Jan Aushadhi)
           </p>
         </div>

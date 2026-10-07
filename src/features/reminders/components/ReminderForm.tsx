@@ -78,7 +78,7 @@ export function ReminderForm({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Medicine Name & Strength
           </label>
           <input
@@ -87,14 +87,14 @@ export function ReminderForm({
             placeholder="e.g. Paracetamol 650 mg"
             value={medicineName}
             onChange={(e) => setMedicineName(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-medium focus:border-teal-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 text-sm font-medium focus:border-cyan-400 focus:outline-none"
           />
         </div>
 
         <ReminderTimePicker value={time} onChange={setTime} />
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Schedule Frequency
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -107,10 +107,10 @@ export function ReminderForm({
                 key={p.id}
                 type="button"
                 onClick={() => handlePatternChange(p.id)}
-                className={`rounded-xl border p-2 text-xs font-semibold transition ${
+                className={`rounded-xl border p-2 text-xs font-semibold transition cursor-pointer ${
                   schedulePattern === p.id
-                    ? "border-teal-600 bg-teal-50 text-teal-900"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    ? "border-cyan-500/50 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-300"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 {p.label}
@@ -120,7 +120,7 @@ export function ReminderForm({
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Repeat Days
           </label>
           <div className="flex justify-between gap-1">
@@ -131,10 +131,10 @@ export function ReminderForm({
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`h-9 w-9 rounded-xl text-xs font-bold transition ${
+                  className={`h-9 w-9 rounded-xl text-xs font-bold transition cursor-pointer ${
                     active
-                      ? "bg-teal-600 text-white"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                      ? "bg-cyan-600 text-white"
+                      : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   {day.slice(0, 2)}
@@ -144,7 +144,7 @@ export function ReminderForm({
           </div>
         </div>
 
-        <div className="flex gap-3 pt-3 border-t border-slate-100">
+        <div className="flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
           <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
             Cancel
           </Button>

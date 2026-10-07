@@ -26,28 +26,28 @@ export function MedicationSchedule() {
 
   return (
     <Card className="space-y-6">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center border-b border-slate-100 pb-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-teal-50 text-teal-700">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400">
             <CalendarDays size={20} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Medication Schedule</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Medication Schedule</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Personalized timing based on doctor&apos;s frequency and meal instructions
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <Clock3 size={15} className="text-teal-600" />
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <Clock3 size={15} className="text-cyan-600 dark:text-cyan-400" />
           <span>Timeline auto-synchronized</span>
         </div>
       </div>
 
       {/* Dose Timeline */}
       <div>
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           Today&apos;s Scheduled Doses
         </h4>
         <DoseTimeline doses={timeline} />
@@ -55,7 +55,7 @@ export function MedicationSchedule() {
 
       {/* Editable Medicine Schedule Cards */}
       <div className="pt-2">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           Active Medicine Regimens ({schedules.length})
         </h4>
         <div className="space-y-3">

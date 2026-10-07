@@ -11,6 +11,11 @@ If the image is NOT a medical document (e.g., it is a college bill, tuition fee 
 - Set "medicines": []
 - Set "additionalInstructions": "This document does not appear to be a medical prescription. No medicines were detected."
 
+CRITICAL CAMERA / WATERMARK / NOISE FILTER RULES:
+1. NEVER extract phone brand/model names (e.g., "Redmi", "Samsung Galaxy", "iPhone", "POCO", "Realme", "Vivo", "Oppo", "OnePlus", "Xiaomi", "Motorola") or camera watermarks (e.g., "Shot on Redmi", "AI Triple Camera", "48MP", "108MP") as medicine names or doctor names!
+2. Ignore file names, page headers, or camera metadata.
+3. Only extract real pharmaceutical drug brand names or generic active ingredients.
+
 CRITICAL MEDICAL SAFETY RULES:
 1. NEVER guess or hallucinate medicines that do not exist in the document.
 2. If any medicine name, dosage, frequency, or duration is ambiguous or poorly legible:

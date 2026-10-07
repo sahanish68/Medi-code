@@ -1,5 +1,6 @@
 import type { ElementType } from "react";
 import { Button } from "./Button";
+import { Sparkles } from "lucide-react";
 
 interface EmptyStateProps {
   text: string;
@@ -12,24 +13,30 @@ interface EmptyStateProps {
 export function EmptyState({
   text,
   icon: Icon,
-  title,
+  title = "Your medical workspace is ready.",
   actionLabel,
   onAction
 }: EmptyStateProps) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-50 text-slate-400">
-        <Icon size={30} />
-      </div>
-      {title && <h3 className="mt-4 font-bold text-slate-800">{title}</h3>}
-      <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">{text}</p>
-      {actionLabel && onAction && (
-        <div className="mt-5">
-          <Button onClick={onAction} className="bg-teal-700 hover:bg-teal-800 text-white">
-            {actionLabel}
-          </Button>
+    <div className="relative overflow-hidden rounded-3xl border border-dashed border-cyan-500/30 bg-slate-950/80 p-8 sm:p-12 text-center backdrop-blur-2xl shadow-xl">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-40 w-40 rounded-full bg-cyan-500/10 blur-2xl" />
+
+      <div className="relative z-10 space-y-4">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-cyan-500/30 bg-cyan-950/60 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.25)] animate-float">
+          <Icon size={32} />
         </div>
-      )}
+
+        <h3 className="text-xl font-bold text-gradient-cyan">{title}</h3>
+        <p className="mx-auto max-w-sm text-xs sm:text-sm text-slate-400 leading-relaxed">{text}</p>
+
+        {actionLabel && onAction && (
+          <div className="pt-2">
+            <Button variant="glow" onClick={onAction}>
+              <Sparkles size={16} /> {actionLabel}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

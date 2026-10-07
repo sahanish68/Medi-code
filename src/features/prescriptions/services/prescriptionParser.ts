@@ -5,24 +5,45 @@ import { getClinicalReferenceForDrug } from "@/features/medicines/services/medic
 import { generateId } from "@/lib/utils/id";
 
 export function formatPrescriptionFromExtraction(
-  extraction: PrescriptionExtraction,
+  extraction: any,
   fileName: string,
   prescriptionId?: string,
   userId?: string
 ): Prescription {
   const id = prescriptionId || generateId();
 
-  const medicines: Medicine[] = extraction.medicines.map((m) => {
+  const medicines: Medicine[] = (extraction.medicines || []).map((m: any) => {
     const medId = generateId();
-    const clinicalInfo = getClinicalReferenceForDrug(m.name);
+    const clinicalInfo = getClinicalReferenceForDrug(m.name || m.rawName || "");
+
+    const rawName = m.rawName || m.name;
+    const matchedName = m.matchedName || (m.needsVerification ? null : m.name);
+    const score = typeof m.confidenceScore === "number" ? m.confidenceScore : 0.85;
+
+    let confidenceLevel: "High" | "Medium" | "Needs verification" = "Needs verification";
+    let status: "verified_candidate" | "review" | "uncertain" = "uncertain";
+
+    if (score >= 0.90 && !m.needsVerification) {
+      confidenceLevel = "High";
+      status = "verified_candidate";
+    } else if (score >= 0.70) {
+      confidenceLevel = "Medium";
+      status = "review";
+    } else {
+      confidenceLevel = "Needs verification";
+      status = "uncertain";
+    }
 
     return {
       id: medId,
       prescriptionId: id,
       name: m.name,
+      rawName,
+      matchedName,
       normalizedName: m.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      matchType: m.matchType || (m.needsVerification ? "fuzzy" : "exact"),
       strength: m.strength || clinicalInfo.defaultStrength,
-      dosage: m.dosage || "1 dose",
+      dosage: m.dosage || "1 tablet",
       frequency: m.frequency || "Twice daily",
       duration: m.duration || "5 days",
       timing: m.timing || "After food",
@@ -33,13 +54,13 @@ export function formatPrescriptionFromExtraction(
       sideEffects: clinicalInfo.sideEffects,
       seriousWarnings: clinicalInfo.seriousWarnings,
       warnings: clinicalInfo.warnings,
-      confidence: m.needsVerification
-        ? "Needs verification"
-        : m.confidenceScore >= 0.8
-        ? "High"
-        : "Medium",
-      confidenceScore: m.confidenceScore,
-      needsVerification: m.needsVerification
+      confidence: confidenceLevel,
+      confidenceScore: score,
+      needsVerification: m.needsVerification,
+      status,
+      aiPrediction: matchedName || m.name,
+      userConfirmed: !m.needsVerification,
+      alternatives: m.alternatives || []
     };
   });
 

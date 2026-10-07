@@ -16,7 +16,6 @@ export function RemindersPage() {
   const [formOpen, setFormOpen] = useState(false);
 
   const handleCreateReminder = (input: ReminderInput) => {
-    // Map to dummy medicine object for addReminder
     addReminder(
       {
         id: input.medicineId,
@@ -34,6 +33,7 @@ export function RemindersPage() {
         sideEffects: [],
         warnings: [],
         confidence: "High",
+        confidenceScore: 0.95,
         needsVerification: false
       },
       input.reminderTime,
@@ -42,7 +42,7 @@ export function RemindersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageTitle
           title="Medicine Reminders"
@@ -50,12 +50,12 @@ export function RemindersPage() {
           icon={Bell}
         />
 
-        <Button variant="primary" onClick={() => setFormOpen(true)}>
+        <Button variant="glow" onClick={() => setFormOpen(true)}>
           <Plus size={16} /> Add New Reminder
         </Button>
       </div>
 
-      {/* Browser Notification Permissions Header */}
+      {/* Notification Permissions Header */}
       <ReminderSettings />
 
       {/* List of Reminders */}
@@ -66,21 +66,21 @@ export function RemindersPage() {
         onCreateNew={() => setFormOpen(true)}
       />
 
-      {/* Omnichannel Roadmap Notice */}
-      <Card className="border-sky-200/80 bg-sky-50/50">
+      {/* Omnichannel Notice */}
+      <Card className="border-slate-200 dark:border-cyan-500/20 bg-white dark:bg-slate-950/80 backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h4 className="text-sm font-bold text-sky-900">Multi-Channel Reminder Support</h4>
-            <p className="mt-1 text-xs text-sky-800 leading-relaxed">
-              Browser alerts are active for web sessions. Mobile Push Notifications and WhatsApp message reminders are prepared for future regional patient updates.
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Multi-Channel Reminder Support</h4>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Browser alerts are active for Web sessions. Mobile Push & WhatsApp notifications are integrated into patient preferences.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs">
-              <Smartphone size={14} className="text-slate-500" /> Push
+            <span className="flex items-center gap-1.5 rounded-lg bg-cyan-50 dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/30">
+              <Smartphone size={14} className="text-cyan-600 dark:text-cyan-400" /> Push Active
             </span>
-            <span className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-2xs">
-              <MessageSquare size={14} className="text-emerald-600" /> WhatsApp
+            <span className="flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+              <MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400" /> WhatsApp
             </span>
           </div>
         </div>

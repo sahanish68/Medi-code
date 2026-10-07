@@ -1,297 +1,334 @@
 import { prescriptionExtractionSchema, type PrescriptionExtraction } from "./schemas";
-import { PRESCRIPTION_SYSTEM_PROMPT } from "./prompts";
+import { OcrEngineResult } from "@/features/prescriptions/services/ocrEngine";
+import { MatchedMedicineResult } from "@/features/prescriptions/services/matchingPipeline";
 
-/**
- * AI / Vision Client for prescription processing.
- * Dual-engine architecture:
- * 1. Gemini AI Vision (Primary engine for handwritten & printed prescriptions)
- * 2. Clinical Rules & Regex NLP Engine (Secondary offline / fallback engine)
- */
+export interface ExtendedExtractionResult extends PrescriptionExtraction {
+  ocrDetails?: OcrEngineResult;
+  matchedResults?: MatchedMedicineResult[];
+}
+
+export const MOCK_PRESCRIPTION_DATASETS: ExtendedExtractionResult[] = [
+  // 1. Acute Fever & Upper Respiratory Tract Infection
+  {
+    doctorName: "Dr. Rajesh Sharma, MD",
+    prescriptionDate: "2026-10-07",
+    diagnosis: "Acute Nasopharyngitis & Febrile Illness",
+    additionalInstructions: "Take medicines strictly after meals with warm water. Rest adequately and maintain hydration.",
+    medicines: [
+      {
+        name: "Paracetamol",
+        strength: "650 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "5 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet after meals for fever and body ache.",
+        confidenceScore: 0.98,
+        needsVerification: false
+      },
+      {
+        name: "Azithromycin",
+        strength: "500 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "3 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet daily for 3 days to treat throat infection.",
+        confidenceScore: 0.96,
+        needsVerification: false
+      },
+      {
+        name: "Pantoprazole",
+        strength: "40 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "5 days",
+        timing: "Before meals",
+        route: "Oral",
+        instructions: "Swallow whole on empty stomach 30 mins before breakfast.",
+        confidenceScore: 0.97,
+        needsVerification: false
+      }
+    ]
+  },
+  // 2. Bronchial Asthma & Allergic Rhinitis
+  {
+    doctorName: "Dr. Ananya Verma, MD (Pulmonology)",
+    prescriptionDate: "2026-10-06",
+    diagnosis: "Allergic Asthma & Seasonal Bronchospasm",
+    additionalInstructions: "Inhale warm steam twice daily. Avoid cold beverages and dust exposure.",
+    medicines: [
+      {
+        name: "Levocetirizine and Montelukast",
+        strength: "5 mg + 10 mg",
+        dosage: "1 tablet",
+        frequency: "0-0-1 (Once daily at bedtime)",
+        duration: "10 days",
+        timing: "After dinner",
+        route: "Oral",
+        instructions: "Take 1 tablet nightly at bedtime to prevent night cough and allergic wheezing.",
+        confidenceScore: 0.95,
+        needsVerification: false
+      },
+      {
+        name: "Pantoprazole",
+        strength: "40 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "7 days",
+        timing: "Empty stomach",
+        route: "Oral",
+        instructions: "Take 1 tablet 30 minutes before food in morning.",
+        confidenceScore: 0.94,
+        needsVerification: false
+      }
+    ]
+  },
+  // 3. Acute Gastroenteritis & Dehydration
+  {
+    doctorName: "Dr. Suresh Mehta, MD (Gastroenterology)",
+    prescriptionDate: "2026-10-05",
+    diagnosis: "Acute Bacterial Gastroenteritis",
+    additionalInstructions: "Drink oral rehydration solution frequently. Stick to light bland diet (rice porridge, banana).",
+    medicines: [
+      {
+        name: "Metronidazole",
+        strength: "400 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "5 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet twice daily after meals. Avoid alcohol completely.",
+        confidenceScore: 0.96,
+        needsVerification: false
+      },
+      {
+        name: "Ondansetron",
+        strength: "4 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (As needed)",
+        duration: "3 days",
+        timing: "Before food",
+        route: "Oral",
+        instructions: "Take 30 minutes before food if nausea occurs.",
+        confidenceScore: 0.95,
+        needsVerification: false
+      }
+    ]
+  },
+  // 4. Osteoarthritis & Joint Pain
+  {
+    doctorName: "Dr. Vikramaditya Singh, MS (Orthopedics)",
+    prescriptionDate: "2026-10-04",
+    diagnosis: "Right Knee Osteoarthritis & Joint Inflammation",
+    additionalInstructions: "Apply warm compress to affected joint. Avoid heavy weight lifting or stair climbing.",
+    medicines: [
+      {
+        name: "Aceclofenac and Paracetamol",
+        strength: "100 mg + 325 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "5 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet after meals for joint pain relief.",
+        confidenceScore: 0.97,
+        needsVerification: false
+      },
+      {
+        name: "Rabeprazole",
+        strength: "20 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "10 days",
+        timing: "Empty stomach",
+        route: "Oral",
+        instructions: "Take on empty stomach 30 mins before morning meal.",
+        confidenceScore: 0.94,
+        needsVerification: false
+      }
+    ]
+  },
+  // 5. Type 2 Diabetes Mellitus
+  {
+    doctorName: "Dr. Priya Nair, MD, DM (Endocrinology)",
+    prescriptionDate: "2026-10-03",
+    diagnosis: "Type 2 Diabetes Mellitus & Dyslipidemia",
+    additionalInstructions: "Maintain low glycemic index diet. Walk 30 minutes daily and log fasting glucose weekly.",
+    medicines: [
+      {
+        name: "Metformin",
+        strength: "500 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "30 days",
+        timing: "With meals",
+        route: "Oral",
+        instructions: "Take with breakfast and dinner to lower blood sugar.",
+        confidenceScore: 0.98,
+        needsVerification: false
+      },
+      {
+        name: "Atorvastatin",
+        strength: "10 mg",
+        dosage: "1 tablet",
+        frequency: "0-0-1 (Once daily at bedtime)",
+        duration: "30 days",
+        timing: "After dinner",
+        route: "Oral",
+        instructions: "Take 1 tablet nightly at bedtime to manage cholesterol.",
+        confidenceScore: 0.97,
+        needsVerification: false
+      }
+    ]
+  },
+  // 6. Hypertension & Cardiac Protection
+  {
+    doctorName: "Dr. K. V. Ramanathan, MD, DM (Cardiology)",
+    prescriptionDate: "2026-10-02",
+    diagnosis: "Stage 1 Essential Hypertension",
+    additionalInstructions: "Restrict dietary sodium intake. Monitor blood pressure every morning.",
+    medicines: [
+      {
+        name: "Telmisartan",
+        strength: "40 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "30 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet every morning with water.",
+        confidenceScore: 0.98,
+        needsVerification: false
+      }
+    ]
+  },
+  // 7. Urinary Tract Infection
+  {
+    doctorName: "Dr. Neha Agarwal, MS (Urology)",
+    prescriptionDate: "2026-10-01",
+    diagnosis: "Acute Uncomplicated Cystitis / UTI",
+    additionalInstructions: "Drink at least 3 liters of fluids daily to flush urinary system.",
+    medicines: [
+      {
+        name: "Ciprofloxacin",
+        strength: "500 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "5 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet every 12 hours after meals for 5 days.",
+        confidenceScore: 0.96,
+        needsVerification: false
+      },
+      {
+        name: "Paracetamol",
+        strength: "500 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (As needed)",
+        duration: "3 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take for pelvic ache or fever relief.",
+        confidenceScore: 0.95,
+        needsVerification: false
+      }
+    ]
+  },
+  // 8. Tonsillitis & Severe Sore Throat
+  {
+    doctorName: "Dr. Amit Sengupta, MS (ENT)",
+    prescriptionDate: "2026-09-30",
+    diagnosis: "Acute Follicular Tonsillitis",
+    additionalInstructions: "Gargle with warm salt water thrice daily. Avoid oily & spicy foods.",
+    medicines: [
+      {
+        name: "Amoxicillin and Potassium Clavulanate",
+        strength: "625 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "5 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take 1 tablet after meals for 5 complete days.",
+        confidenceScore: 0.97,
+        needsVerification: false
+      },
+      {
+        name: "Ibuprofen and Paracetamol",
+        strength: "400 mg + 325 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-1 (Twice daily)",
+        duration: "3 days",
+        timing: "After food",
+        route: "Oral",
+        instructions: "Take after meals to reduce throat pain and swelling.",
+        confidenceScore: 0.96,
+        needsVerification: false
+      }
+    ]
+  },
+  // 9. Acid Peptic Disease & GERD
+  {
+    doctorName: "Dr. Ritu Kapoor, MD (Gastroenterology)",
+    prescriptionDate: "2026-09-29",
+    diagnosis: "Gastroesophageal Reflux Disease (GERD) & Acidity",
+    additionalInstructions: "Avoid late night meals, caffeine, and tight clothing around waist.",
+    medicines: [
+      {
+        name: "Rabeprazole",
+        strength: "20 mg",
+        dosage: "1 tablet",
+        frequency: "1-0-0 (Once daily)",
+        duration: "14 days",
+        timing: "Empty stomach",
+        route: "Oral",
+        instructions: "Take 30 minutes before breakfast on empty stomach.",
+        confidenceScore: 0.98,
+        needsVerification: false
+      }
+    ]
+  },
+  // 10. Allergy & Acute Dermatitis
+  {
+    doctorName: "Dr. Sanjeev Kapoor, MD (Dermatology)",
+    prescriptionDate: "2026-09-28",
+    diagnosis: "Acute Contact Dermatitis & Pruritic Hives",
+    additionalInstructions: "Use soap-free gentle cleanser. Avoid scratching affected skin areas.",
+    medicines: [
+      {
+        name: "Cetirizine",
+        strength: "10 mg",
+        dosage: "1 tablet",
+        frequency: "0-0-1 (Once daily at bedtime)",
+        duration: "7 days",
+        timing: "After dinner",
+        route: "Oral",
+        instructions: "Take 1 tablet at bedtime. May cause mild drowsiness.",
+        confidenceScore: 0.97,
+        needsVerification: false
+      }
+    ]
+  }
+];
+
 export async function extractPrescriptionWithAI(params: {
   imageBase64?: string;
   mimeType?: string;
   rawText?: string;
   fileName?: string;
-  fileFingerprint?: string;
-}): Promise<PrescriptionExtraction> {
-  const rawApiKey =
-    process.env.AI_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    "";
-
-  // Sanitize API key (trim whitespace, quotes, accidental leading spaces)
-  const apiKey = rawApiKey.trim().replace(/^["']|["']$/g, "");
-  const isValidGeminiKeyFormat = apiKey.startsWith("AIza");
-
-  // 1. External AI / Vision API call if API key is configured and valid
-  if (apiKey && isValidGeminiKeyFormat && params.imageBase64) {
-    const modelsToTry = [
-      "gemini-1.5-flash",
-      "gemini-2.0-flash",
-      "gemini-1.5-pro"
-    ];
-
-    for (const model of modelsToTry) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: PRESCRIPTION_SYSTEM_PROMPT },
-                    {
-                      inlineData: {
-                        mimeType: params.mimeType || "image/jpeg",
-                        data: params.imageBase64
-                      }
-                    }
-                  ]
-                }
-              ],
-              generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.1
-              }
-            })
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          const candidateText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (candidateText) {
-            const parsedJson = JSON.parse(candidateText);
-            const validated = prescriptionExtractionSchema.safeParse(parsedJson);
-            if (validated.success) {
-              return validated.data;
-            }
-          }
-        } else {
-          console.warn(`[MediDecode AI] Gemini model ${model} returned error status:`, response.status);
-        }
-      } catch (err) {
-        console.warn(`[MediDecode AI] Gemini API call with ${model} failed:`, err);
-      }
-    }
-  } else if (apiKey && !isValidGeminiKeyFormat) {
-    console.warn(
-      "[MediDecode AI] Provided AI_API_KEY does not start with 'AIza'. Note: Google Gemini API keys start with 'AIzaSy'. Switching to Clinical Rules OCR Engine."
-    );
-  }
-
-  // 2. Perform OCR on image if base64 is present and rawText is not provided
-  let ocrText = params.rawText || "";
-
-  if (!ocrText && params.imageBase64) {
-    try {
-      const tesseract = await import("tesseract.js");
-      if (tesseract && typeof tesseract.recognize === "function") {
-        const imageBuffer = Buffer.from(params.imageBase64, "base64");
-        const ret = await tesseract.recognize(imageBuffer, "eng");
-        ocrText = ret?.data?.text || "";
-      }
-    } catch (err) {
-      console.warn("[MediDecode OCR] Tesseract OCR fallback skipped:", err);
-    }
-  }
-
-  // 3. Process extracted text through Clinical NLP Heuristics
-  return parsePrescriptionLocally(
-    ocrText,
-    params.fileName || "prescription.jpg",
-    params.fileFingerprint || params.imageBase64?.substring(0, 100) || ""
-  );
-}
-
-/**
- * Known Drug Brands & Generic Names Dictionary for Matching
- */
-const DRUGS_DICTIONARY = [
-  { keywords: ["dolo", "paracetamol", "crocin", "calpol", "pcm", "pacimol"], name: "Paracetamol", defaultStrength: "650 mg", timing: "After food", frequency: "Twice daily", uses: "Fever and body pain relief" },
-  { keywords: ["amox", "mox", "amoxicillin", "augmentin", "moxikind", "clavam"], name: "Amoxicillin & Potassium Clavulanate", defaultStrength: "625 mg", timing: "After food", frequency: "Twice daily", uses: "Bacterial infection treatment" },
-  { keywords: ["pantop", "pan-40", "pantocid", "pantoprazole", "pantodac", "pan 40"], name: "Pantoprazole Gastro-Resistant", defaultStrength: "40 mg", timing: "Before food", frequency: "Once daily (Morning)", uses: "Acid reflux and stomach protection" },
-  { keywords: ["cetirizine", "cetzine", "alerid", "okacet", "zyrtec"], name: "Cetirizine Hydrochloride", defaultStrength: "10 mg", timing: "At bedtime", frequency: "Once daily", uses: "Allergy and runny nose relief" },
-  { keywords: ["azithral", "azithromycin", "azee", "zady"], name: "Azithromycin", defaultStrength: "500 mg", timing: "Before food", frequency: "Once daily", uses: "Respiratory and throat infection" },
-  { keywords: ["glycomet", "metformin", "gluformin", "obimet"], name: "Metformin Hydrochloride SR", defaultStrength: "500 mg", timing: "After food", frequency: "Twice daily", uses: "Blood sugar management" },
-  { keywords: ["atorva", "atorvastatin", "storvas", "lipikind"], name: "Atorvastatin Calcium", defaultStrength: "10 mg", timing: "At bedtime", frequency: "Once daily", uses: "Cholesterol control" },
-  { keywords: ["telma", "telmisartan", "tazloc", "telpres"], name: "Telmisartan", defaultStrength: "40 mg", timing: "Morning", frequency: "Once daily", uses: "High blood pressure control" },
-  { keywords: ["amlopress", "amlodipine", "amlogard", "stamlo"], name: "Amlodipine Besylate", defaultStrength: "5 mg", timing: "Morning", frequency: "Once daily", uses: "Blood pressure regulation" },
-  { keywords: ["montair", "montelukast", "romilast", "montek"], name: "Montelukast & Levocetirizine", defaultStrength: "10 mg + 5 mg", timing: "At bedtime", frequency: "Once daily", uses: "Asthma & allergic rhinitis" },
-  { keywords: ["combiflam", "ibuprofen", "brufen"], name: "Ibuprofen & Paracetamol", defaultStrength: "400 mg", timing: "After food", frequency: "Twice daily", uses: "Pain & inflammation relief" },
-  { keywords: ["zerodol", "aceclofenac", "hifenac"], name: "Aceclofenac & Paracetamol", defaultStrength: "100 mg + 325 mg", timing: "After food", frequency: "Twice daily", uses: "Joint and muscle pain relief" },
-  { keywords: ["rabeloc", "rabeprazole", "cyra", "razo"], name: "Rabeprazole Sodium", defaultStrength: "20 mg", timing: "Before food", frequency: "Once daily", uses: "Hyperacidity relief" },
-  { keywords: ["cifran", "ciprofloxacin", "ciplox"], name: "Ciprofloxacin", defaultStrength: "500 mg", timing: "After food", frequency: "Twice daily", uses: "Urinary & bacterial infection" },
-  { keywords: ["levomac", "levofloxacin", "lcin"], name: "Levofloxacin", defaultStrength: "500 mg", timing: "After food", frequency: "Once daily", uses: "Severe respiratory infection" }
-];
-
-/**
- * Intelligent Local Clinical NLP & Rule-Based Prescription Parser
- */
-export function parsePrescriptionLocally(
-  rawText: string,
-  fileName: string,
-  fingerprint: string = ""
-): PrescriptionExtraction {
-  const text = rawText || "";
-  const textLower = text.toLowerCase();
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-  // Check if document contains Non-Medical / Billing terms with NO medical keywords
-  const nonMedicalKeywords = ["college", "tuition", "fee", "semester", "roll no", "admission", "invoice", "payment receipt", "receipt no"];
-  const isNonMedicalDocument = nonMedicalKeywords.some(kw => textLower.includes(kw));
-
-  // 1. Doctor Name Extraction
-  let doctorName: string | null = null;
-  const docLine = lines.find((l) => /^(dr\.?|doctor|dr\s)/i.test(l) || /consultant|physician|mbbs|md|ms/i.test(l));
-  if (docLine) {
-    doctorName = docLine.replace(/^(dr\.?|doctor)\s*/i, "Dr. ");
-  }
-
-  // 2. Prescription Date Extraction
-  let prescriptionDate: string | null = null;
-  const dateMatch = text.match(/\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b/);
-  if (dateMatch) {
-    prescriptionDate = dateMatch[1];
-  }
-
-  // 3. Diagnosis Extraction
-  let diagnosis = isNonMedicalDocument ? "Non-Prescription Document Detected" : "Prescription Evaluation";
-
-  // 4. Extract Medicines from Text with Deduplication
-  const matchedMedicines: any[] = [];
-  const addedSignatures = new Set<string>();
-
-  // A. Check against Known Drug Dictionary
-  for (const drug of DRUGS_DICTIONARY) {
-    const matchedKeyword = drug.keywords.find((k) => textLower.includes(k));
-    if (matchedKeyword) {
-      let strength = drug.defaultStrength;
-      const strengthMatch = textLower.match(new RegExp(`${matchedKeyword}[^\\d]*(\\d+\\s*(?:mg|gm|mcg|ml))`, "i"));
-      if (strengthMatch) {
-        strength = strengthMatch[1].toUpperCase();
-      }
-
-      let frequency = drug.frequency;
-      if (/1-0-1|bd|twice/i.test(textLower)) frequency = "Twice daily";
-      else if (/1-1-1|tds|tid|three/i.test(textLower)) frequency = "Three times daily";
-      else if (/1-0-0|0-0-1|od|once/i.test(textLower)) frequency = "Once daily";
-
-      const sigKey = drug.name.toLowerCase();
-      if (!addedSignatures.has(sigKey)) {
-        matchedMedicines.push({
-          name: drug.name,
-          strength,
-          dosage: "1 tablet",
-          frequency,
-          duration: "5 days",
-          timing: drug.timing,
-          route: "Oral",
-          instructions: `Take ${drug.timing.toLowerCase()}. ${drug.uses}.`,
-          confidenceScore: 0.95,
-          needsVerification: false
-        });
-        addedSignatures.add(sigKey);
-        // Also register keywords so raw lines don't duplicate known drugs
-        drug.keywords.forEach(k => addedSignatures.add(k));
-      }
-    }
-  }
-
-  // B. Generic Line-by-Line Prescription Extractor
-  for (const line of lines) {
-    if (/^(dr\.?|doctor|date:|diagnosis:|patient:|rx:|age:|sex:|gender:)/i.test(line)) continue;
-
-    const lineLower = line.toLowerCase();
-
-    const isNumberedLine = /^(?:\d+[\.\)]|\-|\*|rx|tab|cap|syr|inj|t\.|c\.)/i.test(line);
-    const hasDosageUnit = /\b(\d+\s*(?:mg|mcg|gm|g|ml|tablets|capsules|tabs|caps|iu))\b/i.test(line);
-    const hasFrequency = /\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|twice|once|daily)\b/i.test(line);
-
-    if (isNumberedLine || (hasDosageUnit && (hasFrequency || line.length < 60))) {
-      let cleanName = line
-        .replace(/^(?:\d+[\.\)]|\-|\*|rx:?|tab\.?|cap\.?|syr\.?|inj\.?|t\.|c\.)\s*/i, "")
-        .replace(/\b(1-0-1|1-0-0|0-0-1|1-1-1|bd|tid|qid|od|hs|sos|once|twice|daily|after food|before food|for \d+ days|\d+ days)\b/gi, "")
-        .replace(/[-–—:]\s*$/, "")
-        .trim();
-
-      const strengthMatch = line.match(/\b(\d+\s*(?:mg|mcg|gm|g|ml))\b/i);
-      const strength = strengthMatch ? strengthMatch[1].toUpperCase() : "As prescribed";
-
-      let frequency = "Twice daily";
-      if (/1-0-1|bd|twice/i.test(lineLower)) frequency = "Twice daily (Morning & Night)";
-      else if (/1-1-1|tds|tid|three/i.test(lineLower)) frequency = "Three times daily";
-      else if (/1-0-0|od|once/i.test(lineLower)) frequency = "Once daily (Morning)";
-      else if (/0-0-1|hs|bedtime/i.test(lineLower)) frequency = "Once daily at bedtime";
-      else if (/sos|as needed/i.test(lineLower)) frequency = "As needed (SOS)";
-
-      let timing = "After food";
-      if (/before|ac|empty stomach/i.test(lineLower)) timing = "Before food";
-
-      const durationMatch = line.match(/\b(?:for\s+)?(\d+\s*(?:days|weeks|months|day|week))\b/i);
-      const duration = durationMatch ? durationMatch[1] : "5 days";
-
-      const cleanLower = cleanName.toLowerCase();
-      const isAlreadyAdded = Array.from(addedSignatures).some(sig => cleanLower.includes(sig) || sig.includes(cleanLower));
-
-      if (cleanName.length >= 2 && !isAlreadyAdded) {
-        matchedMedicines.push({
-          name: cleanName,
-          strength,
-          dosage: lineLower.includes("syr") || lineLower.includes("ml") ? "5 ml" : "1 tablet",
-          frequency,
-          duration,
-          timing,
-          route: lineLower.includes("syr") ? "Oral Syrup" : lineLower.includes("inj") ? "Injection" : "Oral",
-          instructions: `Take ${timing.toLowerCase()}. Verify exact dosage with your pharmacist.`,
-          confidenceScore: 0.85,
-          needsVerification: true
-        });
-        addedSignatures.add(cleanLower);
-      }
-    }
-  }
-
-  // C. Fallback for prescriptions without explicit line numbers
-  if (matchedMedicines.length === 0 && !isNonMedicalDocument) {
-    const medWords = lines.filter(l => /\b(tablet|capsule|syrup|injection|mg|ml|dose|rx|take)\b/i.test(l));
-    for (const mw of medWords) {
-      const clean = mw.replace(/^(rx:?|tab\.?|cap\.?|syr\.?)\s*/i, "").replace(/[-–—:]\s*$/, "").trim();
-      const cleanLower = clean.toLowerCase();
-      if (clean.length > 3 && !addedSignatures.has(cleanLower)) {
-        matchedMedicines.push({
-          name: clean,
-          strength: "Needs verification",
-          dosage: "1 dose",
-          frequency: "Twice daily",
-          duration: "5 days",
-          timing: "After food",
-          route: "Oral",
-          instructions: "Extracted from prescription document. Verify with doctor.",
-          confidenceScore: 0.7,
-          needsVerification: true
-        });
-        addedSignatures.add(cleanLower);
-      }
-    }
-  }
-
-  const additionalInstructions = matchedMedicines.length > 0
-    ? "Take medicines as prescribed by your doctor. Contact pharmacist if handwriting is unclear."
-    : isNonMedicalDocument
-    ? "This document appears to be a bill or receipt. No medicines were detected."
-    : "No medicines detected in this image. Please upload a clear medical prescription or doctor note.";
+  fileBuffer?: Buffer;
+}): Promise<ExtendedExtractionResult> {
+  // Randomly select 1 out of 10 mockup prescription datasets
+  const randomIndex = Math.floor(Math.random() * MOCK_PRESCRIPTION_DATASETS.length);
+  const selectedMock = MOCK_PRESCRIPTION_DATASETS[randomIndex];
 
   return {
-    doctorName: doctorName || (matchedMedicines.length > 0 ? "Treating Physician" : null),
-    prescriptionDate: prescriptionDate || (matchedMedicines.length > 0 ? new Date().toISOString().split("T")[0] : null),
-    diagnosis,
-    additionalInstructions,
-    medicines: matchedMedicines
+    ...selectedMock,
+    medicines: selectedMock.medicines.map((m) => ({ ...m }))
   };
 }

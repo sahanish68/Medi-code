@@ -47,15 +47,15 @@ export function LocationPermission({ onLocationDetected, onError }: LocationPerm
   }
 
   return (
-    <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4">
+    <div className="rounded-2xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-950/40 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-600 text-white">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-600 text-white">
             <MapPin size={20} />
           </div>
           <div>
-            <h4 className="font-semibold text-teal-900">Find centers near you</h4>
-            <p className="text-xs text-teal-700">
+            <h4 className="font-semibold text-slate-900 dark:text-cyan-200">Find centers near you</h4>
+            <p className="text-xs text-slate-600 dark:text-cyan-400">
               Use your device location for exact distance or search manually below.
             </p>
           </div>
@@ -64,7 +64,7 @@ export function LocationPermission({ onLocationDetected, onError }: LocationPerm
         <Button
           onClick={requestLocation}
           disabled={requesting}
-          className="shrink-0 bg-teal-700 hover:bg-teal-800 text-white"
+          className="shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white"
         >
           <Navigation size={16} className={requesting ? "animate-spin" : ""} />
           {requesting ? "Detecting..." : "Use My Location"}
@@ -72,7 +72,7 @@ export function LocationPermission({ onLocationDetected, onError }: LocationPerm
       </div>
 
       {error && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 border border-red-200">
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 p-2.5 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30">
           <AlertCircle size={15} className="shrink-0" />
           <span>{error}</span>
         </div>
